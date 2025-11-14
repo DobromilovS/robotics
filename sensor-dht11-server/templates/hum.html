@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHT11 Humidity Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/hum.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💧 DHT11 Humidity Monitor</h1>
+            <p>Real-time humidity monitoring</p>
+            <div class="nav-links">
+                <a href="/" class="nav-link">📊 Combined View</a>
+                <a href="/temperature" class="nav-link">🌡️ Temperature Only</a>
+            </div>
+        </div>
+
+        <div class="current-data">
+            <div class="data-card hum-card">
+                <div class="data-label">Humidity</div>
+                <div class="data-value hum-value" id="currentHum">-- %</div>
+                <div class="timestamp" id="humTime">--:--:--</div>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-wrapper">
+                <div class="chart-title">Humidity History (%)</div>
+                <div class="chart-container">
+                    <canvas id="humChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="status">
+            <div class="connection-status" id="connectionStatus">
+                🔄 Connecting...
+            </div>
+        </div>
+    </div>
+
+    <script src="../static/js/hum.js"></script>
+</body>
+</html>

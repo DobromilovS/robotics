@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DHT11 Monitor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/index.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>🌡️💧 DHT11 Monitor</h1>
+
+        <div class="data-card">
+            <div>Temperature</div>
+            <div class="data-value" id="currentTemp">-- °C</div>
+            <div class="timestamp" id="tempTime">--:--:--</div>
+        </div>
+
+        <div class="data-card">
+            <div>Humidity</div>
+            <div class="data-value" id="currentHum">-- %</div>
+            <div class="timestamp" id="humTime">--:--:--</div>
+        </div>
+
+        <div class="status" id="connectionStatus">
+            🔄 Connecting to server...
+        </div>
+
+        <div class="navigation">
+            <a href="/temperature" class="nav-link">🌡️ Temperature</a>
+            <a href="/humidity" class="nav-link">💧 Humidity</a>
+        </div>
+    </div>
+
+    <script src="../static/js/index.js"></script>
+</body>
+</html>
