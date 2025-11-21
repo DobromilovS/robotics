@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DHT11 Temperature Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style/temp.css') }}">
+    <link rel="stylesheet" href="/static/style/temp.css">
 </head>
 <body>
     <div class="container">
@@ -14,7 +13,6 @@
             <h1>🌡️ DHT11 Temperature Monitor</h1>
             <p>Real-time temperature monitoring</p>
             <div class="nav-links">
-                <a href="/" class="nav-link">📊 Combined View</a>
                 <a href="/humidity" class="nav-link">💧 Humidity Only</a>
             </div>
         </div>
@@ -43,6 +41,6 @@
         </div>
     </div>
 
-    <script src="../static/js/temp.js"></script>
+    <script src="/static/js/temp.js"></script>
 </body>
 </html>

@@ -2,24 +2,9 @@ const currentTemp = document.getElementById('currentTemp');
 const tempTime = document.getElementById('tempTime');
 const connectionStatus = document.getElementById('connectionStatus');
 
-const socket = io();
-
-socket.on('connect', function() {
-    connectionStatus.textContent = '✅ Connected to server';
-    connectionStatus.className = 'connection-status connected';
-    console.log('Socket.IO connected');
-});
-
-socket.on('sensor_update', function(data) {
-    console.log('Data received:', data);
-    updateDisplay(data);
-});
-
-socket.on('disconnect', function() {
-    connectionStatus.textContent = '❌ Disconnected';
-    connectionStatus.className = 'connection-status';
-    console.log('Socket.IO disconnected');
-});
+let socket = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
 
 const tempChart = new Chart(document.getElementById('tempChart'), {
     type: 'line',
@@ -72,6 +57,44 @@ const tempChart = new Chart(document.getElementById('tempChart'), {
     }
 });
 
+function connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+    socket = new WebSocket(wsUrl);
+
+    socket.onopen = function(event) {
+        console.log('✅ WebSocket connected');
+        connectionStatus.textContent = '✅ Connected to server';
+        connectionStatus.className = 'connection-status connected';
+        reconnectAttempts = 0;
+    };
+
+    socket.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('Data received:', data);
+            updateDisplay(data);
+        } catch (error) {
+            console.error('Error parsing message:', error);
+        }
+    };
+
+    socket.onclose = function(event) {
+        console.log('WebSocket disconnected:', event.code, event.reason);
+
+        if (event.code !== 1000) {
+            handleDisconnection();
+        }
+    };
+
+    socket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+        connectionStatus.textContent = '❌ WebSocket error';
+        connectionStatus.className = 'connection-status';
+    };
+}
+
 function updateDisplay(data) {
     currentTemp.textContent = `${data.temperature.toFixed(1)} °C`;
     tempTime.textContent = data.timestamp;
@@ -87,3 +110,27 @@ function updateChart(history) {
         tempChart.update('none');
     }
 }
+
+function handleDisconnection() {
+    connectionStatus.textContent = '❌ Disconnected - Attempting to reconnect...';
+    connectionStatus.className = 'connection-status';
+
+    if (reconnectAttempts < maxReconnectAttempts) {
+        reconnectAttempts++;
+        setTimeout(() => {
+            console.log(`Attempting to reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`);
+            connectWebSocket();
+        }, 3000);
+    } else {
+        connectionStatus.textContent = '❌ Failed to reconnect. Please refresh the page.';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    connectWebSocket();
+    window.addEventListener('beforeunload', function() {
+        if (socket) {
+            socket.close(1000, 'Page navigation');
+        }
+    });
+});
