@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robot Face</title>
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background-color: #FFD500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.face {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.eyes {
+    display: flex;
+    gap: 4rem;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.eye {
+    width: 100px;
+    height: 100px;
+    background: #000;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+}
+
+.pupil {
+    width: 30px;
+    height: 30px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 35px;
+    left: 35px;
+    transition: all 0.2s ease;
+}
+
+.eyelid {
+    position: absolute;
+    width: 100%;
+    height: 0%;
+    background: #FFD500;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    transition: height 0.2s ease;
+}
+
+.lower-lid {
+    top: auto;
+    bottom: 0;
+}
+
+.mouth {
+    width: 200px;
+    height: 40px;
+    border-radius: 20px;
+    background: #000;
+    transition: all 0.2s ease;
+}
+
+.happy .mouth { border-radius: 0 0 50% 50%; transform: scaleY(1.2); }
+.sad .mouth { border-radius: 50% 50% 0 0; transform: scaleY(1.2); }
+.surprised .mouth { width: 60px; height: 60px; border-radius: 50%; }
+.angry .mouth { border-radius: 20px; transform: scaleY(0.5); }
+.laughing .mouth { border-radius: 0 0 50% 50%; transform: scaleY(1.5); }
+.winking .eye:first-child .eyelid.upper-lid { height: 100%; }
+.sleepy .mouth { width: 120px; height: 20px; border-radius: 10px; }
+.neutral .mouth { border-radius: 20px; width: 200px; height: 40px; transform: scaleY(1); }
+
+</style>
+</head>
+<body>
+<div class="face" id="face">
+    <div class="eyes">
+        <div class="eye">
+            <div class="eyelid upper-lid"></div>
+            <div class="eyelid lower-lid lower-lid"></div>
+            <div class="pupil"></div>
+        </div>
+        <div class="eye">
+            <div class="eyelid upper-lid"></div>
+            <div class="eyelid lower-lid lower-lid"></div>
+            <div class="pupil"></div>
+        </div>
+    </div>
+    <div class="mouth"></div>
+</div>
+
+<script>
+const face = document.getElementById('face');
+const pupils = document.querySelectorAll('.pupil');
+const upperLids = document.querySelectorAll('.upper-lid');
+const lowerLids = document.querySelectorAll('.lower-lid');
+const mouth = document.querySelector('.mouth');
+
+document.addEventListener('mousemove', e => {
+    pupils.forEach(pupil => {
+        const rect = pupil.parentElement.getBoundingClientRect();
+        const centerX = rect.left + rect.width/2;
+        const centerY = rect.top + rect.height/2;
+        const dx = (e.clientX - centerX)/10;
+        const dy = (e.clientY - centerY)/10;
+        pupil.style.transform = `translate(${dx}px, ${dy}px) scale(${1 + dy/200})`;
+    });
+});
+
+function blink() {
+    upperLids.forEach(lid => lid.style.height = '100%');
+    lowerLids.forEach(lid => lid.style.height = '100%');
+    setTimeout(() => {
+        upperLids.forEach(lid => lid.style.height = '0%');
+        lowerLids.forEach(lid => lid.style.height = '0%');
+    }, 200);
+}
+setInterval(blink, 4000);
+
+function setExpression(name) {
+    face.className = 'face';
+    face.classList.add(name);
+}
+
+let speaking = false;
+function speakAnimation(on) {
+    speaking = on;
+    if(speaking) {
+        mouthAnimation();
+    }
+}
+function mouthAnimation() {
+    if(!speaking) return;
+    const scaleY = 0.8 + Math.random()*0.4;
+    const width = 180 + Math.random()*40;
+    mouth.style.transform = `scaleY(${scaleY})`;
+    mouth.style.width = `${width}px`;
+    setTimeout(mouthAnimation, 150);
+}
+
+const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+ws.onopen = () => console.log("WS connected");
+ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+
+    if (msg.type === "face_expression") {
+        setExpression(msg.expression);
+    }
+
+    if (msg.type === "speaking") {
+        speakAnimation(msg.on);
+    }
+};
+
+</script>
+</body>
+</html>

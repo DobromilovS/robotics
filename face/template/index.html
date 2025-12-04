@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Display</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+
+        #image-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #display-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0) rotate(0deg); }
+            20% { transform: translateX(-10px) rotate(-2deg); }
+            40% { transform: translateX(10px) rotate(2deg); }
+            60% { transform: translateX(-8px) rotate(-1deg); }
+            80% { transform: translateX(8px) rotate(1deg); }
+            100% { transform: translateX(0) rotate(0deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="image-container">
+        <img id="display-image" src="/static/default.jpg" alt="Display Image">
+    </div>
+
+    <script>
+        class ImageClient {
+            constructor() {
+                this.socket = null;
+                this.imageElement = document.getElementById('display-image');
+                this.connect();
+            }
+
+            connect() {
+                this.socket = new WebSocket(`ws://${window.location.host}/ws`);
+                
+                this.socket.onopen = () => {
+                    console.log('WebSocket connected');
+                };
+
+                this.socket.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'image_update') {
+                        this.updateImage(data.image);
+                    }
+                };
+
+                this.socket.onclose = () => {
+                    console.log('WebSocket disconnected');
+                    setTimeout(() => this.connect(), 3000);
+                };
+            }
+
+            async updateImage(newSrc) {
+                this.imageElement.classList.add('shake');
+
+                await new Promise(resolve => setTimeout(resolve, 150));
+
+                this.imageElement.src = newSrc;
+                
+                await new Promise(resolve => setTimeout(resolve, 350));
+                
+                this.imageElement.classList.remove('shake');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new ImageClient();
+        });
+    </script>
+</body>
+</html>

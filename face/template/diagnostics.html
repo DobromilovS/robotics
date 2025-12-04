@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Диагностика</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .unit {
+            font-size: 0.8em;
+            color: #ccc;
+        }
+        .chart-container {
+            height: 300px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .online {
+            background: #4CAF50;
+        }
+        .offline {
+            background: #f44336;
+        }
+        .gyro-visual {
+            width: 200px;
+            height: 200px;
+            border: 2px solid #444;
+            border-radius: 50%;
+            position: relative;
+            margin: 20px auto;
+            background: #333;
+        }
+        .gyro-dot {
+            width: 20px;
+            height: 20px;
+            background: #ff6384;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+        .distance-bar {
+            width: 100%;
+            height: 30px;
+            background: #333;
+            border-radius: 15px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .distance-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #ffeb3b, #f44336);
+            transition: width 0.3s ease;
+        }
+        .distance-value {
+            text-align: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Диагностика системы</h1>
+
+        <div class="status" id="status">Статус: Загрузка...</div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Датчик приближения</h3>
+                <div class="value" id="distance">0</div>
+                <span class="unit">см</span>
+                <div class="distance-bar">
+                    <div class="distance-fill" id="distanceFill" style="width: 0%"></div>
+                </div>
+                <div class="distance-value" id="distanceText">Объект не обнаружен</div>
+            </div>
+
+            <div class="card">
+                <h3>Гироскоп - Угол X</h3>
+                <div class="value" id="gyroX">0</div>
+                <span class="unit">°</span>
+            </div>
+
+            <div class="card">
+                <h3>Гироскоп - Угол Y</h3>
+                <div class="value" id="gyroY">0</div>
+                <span class="unit">°</span>
+            </div>
+
+            <div class="card">
+                <h3>Гироскоп - Угол Z</h3>
+                <div class="value" id="gyroZ">0</div>
+                <span class="unit">°</span>
+            </div>
+
+            <div class="card">
+                <h3>Визуализация гироскопа</h3>
+                <div class="gyro-visual">
+                    <div class="gyro-dot" id="gyroDot"></div>
+                </div>
+                <div style="text-align: center; margin-top: 10px;">
+                    <span id="gyroPosition">Центр</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Время обновления</h3>
+                <div class="value" id="timestamp">-</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Графики показаний</h3>
+            <div class="chart-container">
+                <canvas id="sensorChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('sensorChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Расстояние (см)',
+                        data: [],
+                        borderColor: '#ff6384',
+                        backgroundColor: 'rgba(255,99,132,0.1)',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Угол X (°)',
+                        data: [],
+                        borderColor: '#36a2eb',
+                        backgroundColor: 'rgba(54,162,235,0.1)',
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: 'Угол Y (°)',
+                        data: [],
+                        borderColor: '#ffcd56',
+                        backgroundColor: 'rgba(255,205,86,0.1)',
+                        yAxisID: 'y2'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Время'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Расстояние (см)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Угол X (°)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: false
+                    }
+                }
+            }
+        });
+
+        const maxDataPoints = 50;
+        const ws = new WebSocket('ws://127.0.0.1:8000/ws/diagnostics');
+
+        ws.onopen = function() {
+            document.getElementById('status').textContent = 'Статус: ONLINE';
+            document.getElementById('status').className = 'status online';
+        };
+
+        ws.onclose = function() {
+            document.getElementById('status').textContent = 'Статус: OFFLINE';
+            document.getElementById('status').className = 'status offline';
+        };
+
+        ws.onmessage = function(event) {
+            const message = JSON.parse(event.data);
+            if (message.type === 'sensor_data') {
+                updateSensorData(message.data);
+            }
+        };
+
+        function updateSensorData(data) {
+            // Обновление расстояния
+            const distance = data.distance || 0;
+            document.getElementById('distance').textContent = distance.toFixed(1);
+
+            // Визуализация расстояния (0-100 см)
+            const distancePercent = Math.min(100, (distance / 100) * 100);
+            document.getElementById('distanceFill').style.width = distancePercent + '%';
+
+            if (distance >= 80) {
+                document.getElementById('distanceText').textContent = 'Объект далеко';
+                document.getElementById('distanceText').style.color = '#4CAF50';
+            } else if (distance >= 30) {
+                document.getElementById('distanceText').textContent = 'Объект на среднем расстоянии';
+                document.getElementById('distanceText').style.color = '#ffeb3b';
+            } else if (distance > 0) {
+                document.getElementById('distanceText').textContent = 'Объект близко!';
+                document.getElementById('distanceText').style.color = '#f44336';
+            } else {
+                document.getElementById('distanceText').textContent = 'Объект не обнаружен';
+                document.getElementById('distanceText').style.color = '#ccc';
+            }
+
+            // Обновление гироскопа
+            const gyroX = data.gyro_x || 0;
+            const gyroY = data.gyro_y || 0;
+            const gyroZ = data.gyro_z || 0;
+
+            document.getElementById('gyroX').textContent = gyroX.toFixed(1);
+            document.getElementById('gyroY').textContent = gyroY.toFixed(1);
+            document.getElementById('gyroZ').textContent = gyroZ.toFixed(1);
+
+            // Визуализация гироскопа
+            updateGyroVisualization(gyroX, gyroY);
+
+            const time = new Date(data.timestamp).toLocaleTimeString();
+            document.getElementById('timestamp').textContent = time;
+
+            // Обновление графиков
+            chart.data.labels.push(time);
+            chart.data.datasets[0].data.push(distance);
+            chart.data.datasets[1].data.push(gyroX);
+            chart.data.datasets[2].data.push(gyroY);
+
+            if (chart.data.labels.length > maxDataPoints) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+                chart.data.datasets[1].data.shift();
+                chart.data.datasets[2].data.shift();
+            }
+
+            chart.update();
+        }
+
+        function updateGyroVisualization(x, y) {
+            const dot = document.getElementById('gyroDot');
+            const positionText = document.getElementById('gyroPosition');
+
+            // Ограничиваем значения для визуализации (-45 до 45 градусов)
+            const maxAngle = 45;
+            const posX = (x / maxAngle) * 90; // -90px to 90px
+            const posY = (y / maxAngle) * 90;
+
+            // Ограничиваем движение внутри круга
+            const distance = Math.sqrt(posX * posX + posY * posY);
+            if (distance > 90) {
+                const scale = 90 / distance;
+                posX *= scale;
+                posY *= scale;
+            }
+
+            dot.style.transform = `translate(${posX}px, ${posY}px)`;
+
+            // Определяем положение
+            if (Math.abs(x) < 5 && Math.abs(y) < 5) {
+                positionText.textContent = 'Центр';
+                dot.style.background = '#4CAF50';
+            } else if (Math.abs(x) > Math.abs(y)) {
+                positionText.textContent = x > 0 ? 'Наклон вправо' : 'Наклон влево';
+                dot.style.background = '#ff6384';
+            } else {
+                positionText.textContent = y > 0 ? 'Наклон вперед' : 'Наклон назад';
+                dot.style.background = '#36a2eb';
+            }
+        }
+    </script>
+</body>
+</html>

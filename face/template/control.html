@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Управление Избушкой</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            background: #2d2d2d;
+            color: white;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .commands {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Управление Избушкой</h1>
+
+        <div class="input-group">
+            <input type="text" id="commandInput" placeholder="Введите команду (например: радость, реакция, крути...)">
+            <button onclick="sendCommand()">Отправить</button>
+        </div>
+
+        <div class="commands">
+            <button onclick="sendQuickCommand('реакция')">Случайная реакция</button>
+            <button onclick="sendQuickCommand('радость')">Радость</button>
+            <button onclick="sendQuickCommand('злость')">Злость</button>
+            <button onclick="sendQuickCommand('удивление')">Удивление</button>
+            <button onclick="sendQuickCommand('грусть')">Грусть</button>
+            <button onclick="sendQuickCommand('смех')">Смех</button>
+            <button onclick="sendQuickCommand('подмигни')">Подмигни</button>
+            <button onclick="sendQuickCommand('сон')">Сон</button>
+            <button onclick="sendQuickCommand('нейтрально')">Нейтрально</button>
+            <button onclick="sendQuickCommand('крути')">Крути казино</button>
+            <button onclick="sendQuickCommand('диагностика')">Диагностика</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        async function sendCommand() {
+            const input = document.getElementById('commandInput');
+            const command = input.value.trim();
+            if (!command) return;
+
+            await sendTextCommand(command);
+            input.value = '';
+        }
+
+        async function sendQuickCommand(command) {
+            await sendTextCommand(command);
+        }
+
+        async function sendTextCommand(command) {
+            const status = document.getElementById('status');
+
+            try {
+                const response = await fetch('/text-command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command: command })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    status.textContent = `Команда выполнена: ${command}`;
+                    status.className = 'status success';
+                } else {
+                    status.textContent = `Ошибка: ${result.message}`;
+                    status.className = 'status error';
+                }
+            } catch (error) {
+                status.textContent = 'Ошибка соединения';
+                status.className = 'status error';
+            }
+
+            setTimeout(() => {
+                status.textContent = '';
+                status.className = 'status';
+            }, 3000);
+        }
+
+        document.getElementById('commandInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendCommand();
+            }
+        });
+    </script>
+</body>
+</html>
